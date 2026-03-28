@@ -27,7 +27,7 @@ interface Creator {
 const MOCK_CREATORS: Creator[] = [
   {
     id: 1,
-    name: "Priya Sharma",
+    name: "Rohana Mahimkar",
     handle: "@priyasharma",
     avatar: "PS",
     platforms: ["Instagram", "YouTube"],
@@ -43,7 +43,7 @@ const MOCK_CREATORS: Creator[] = [
   },
   {
     id: 2,
-    name: "Rohit Verma",
+    name: "Ruchi Gadgil",
     handle: "@rohitfitness",
     avatar: "RV",
     platforms: ["Instagram", "YouTube"],
@@ -59,7 +59,7 @@ const MOCK_CREATORS: Creator[] = [
   },
   {
     id: 3,
-    name: "Sneha Kapoor",
+    name: "Sania Valiyani",
     handle: "@snehalifestyle",
     avatar: "SK",
     platforms: ["Instagram", "Facebook"],
@@ -75,7 +75,7 @@ const MOCK_CREATORS: Creator[] = [
   },
   {
     id: 4,
-    name: "Arjun Mehta",
+    name: "Ridhi Agrawal",
     handle: "@arjuntech",
     avatar: "AM",
     platforms: ["YouTube", "Twitter", "LinkedIn"],
@@ -91,7 +91,7 @@ const MOCK_CREATORS: Creator[] = [
   },
   {
     id: 5,
-    name: "Kavya Nair",
+    name: "Yash Thakkar",
     handle: "@kavyacooks",
     avatar: "KN",
     platforms: ["Instagram", "YouTube"],
@@ -107,7 +107,7 @@ const MOCK_CREATORS: Creator[] = [
   },
   {
     id: 6,
-    name: "Dev Anand",
+    name: "Rajas Rege",
     handle: "@devtravels",
     avatar: "DA",
     platforms: ["Instagram", "YouTube", "Facebook"],
@@ -123,7 +123,7 @@ const MOCK_CREATORS: Creator[] = [
   },
   {
     id: 7,
-    name: "Isha Rawat",
+    name: "Rishi Panchal",
     handle: "@ishabooks",
     avatar: "IR",
     platforms: ["Instagram", "Twitter"],
@@ -139,7 +139,7 @@ const MOCK_CREATORS: Creator[] = [
   },
   {
     id: 8,
-    name: "Manish Dubey",
+    name: "Sachhidananda Mahapatro",
     handle: "@manishgaming",
     avatar: "MD",
     platforms: ["YouTube", "Twitter"],
@@ -155,7 +155,7 @@ const MOCK_CREATORS: Creator[] = [
   },
   {
     id: 9,
-    name: "Riya Joshi",
+    name: "Gargee Sowani",
     handle: "@riyawellness",
     avatar: "RJ",
     platforms: ["Instagram"],
