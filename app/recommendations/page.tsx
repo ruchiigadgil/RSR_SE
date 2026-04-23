@@ -48,6 +48,12 @@ interface ScrapeSourceMeta {
   at?: string;
 }
 
+const CREATOR_CART_KEY = "creator_cart_items";
+
+interface CreatorCartItem extends RecommendedCreator {
+  addedAt: string;
+}
+
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatNum(n: number): string {
@@ -139,7 +145,12 @@ function BreakdownBar({ label, value, max }: { label: string; value: number; max
 
 // ─── Creator Card ──────────────────────────────────────────────────────────────
 
-function CreatorCard({ creator, rank }: { creator: RecommendedCreator; rank: number }) {
+function CreatorCard({ creator, rank, isInCart, onAddToCart }: {
+  creator: RecommendedCreator;
+  rank: number;
+  isInCart: boolean;
+  onAddToCart: (creator: RecommendedCreator) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
   const initials = getInitials(creator.name);
@@ -187,6 +198,13 @@ function CreatorCard({ creator, rank }: { creator: RecommendedCreator; rank: num
               onClick={(e) => { if (!hasProfileUrl) e.preventDefault(); }}>
               View Profile ↗
             </a>
+            <button
+              className={`cart-link-badge ${isInCart ? "in-cart" : ""}`}
+              onClick={() => onAddToCart(creator)}
+              disabled={isInCart}
+            >
+              {isInCart ? "In Cart" : "Add to Cart"}
+            </button>
           </div>
         </div>
 
@@ -281,6 +299,13 @@ function CreatorCard({ creator, rank }: { creator: RecommendedCreator; rank: num
             }}>
               Copy Link
             </button>
+            <button
+              className={`action-btn tertiary ${isInCart ? "in-cart" : ""}`}
+              onClick={() => onAddToCart(creator)}
+              disabled={isInCart}
+            >
+              {isInCart ? "In Cart" : "Add to Cart"}
+            </button>
           </div>
         </div>
       )}
@@ -295,6 +320,7 @@ export default function RecommendationsPage() {
   const [recommendations, setRecommendations] = useState<RecommendedCreator[]>([]);
   const [profile, setProfile] = useState<BusinessProfile | null>(null);
   const [scrapeMeta, setScrapeMeta] = useState<ScrapeSourceMeta | null>(null);
+  const [cartKeys, setCartKeys] = useState<Record<string, true>>({});
   const [filterPlatform, setFilterPlatform] = useState<string>("all");
   const [filterMinScore, setFilterMinScore] = useState(0);
   const [sortBy, setSortBy] = useState<"matchScore" | "subscribers" | "engagementRate">("matchScore");
@@ -314,6 +340,16 @@ export default function RecommendationsPage() {
       setRecommendations(JSON.parse(raw));
       if (rawProfile) setProfile(JSON.parse(rawProfile));
       if (rawScrapeMeta) setScrapeMeta(JSON.parse(rawScrapeMeta));
+
+      const rawCart = localStorage.getItem(CREATOR_CART_KEY);
+      if (rawCart) {
+        const parsed = JSON.parse(rawCart) as CreatorCartItem[];
+        const keyMap: Record<string, true> = {};
+        for (const item of parsed) {
+          keyMap[`${item.platform}:${item.id}`] = true;
+        }
+        setCartKeys(keyMap);
+      }
     } catch {
       router.push("/onboarding");
     }
@@ -346,6 +382,22 @@ export default function RecommendationsPage() {
         : "Source Unknown";
   const sourceNote = scrapeMeta?.warning
     ?? (isLive ? "Results were fetched from live providers." : "These results may not be real live profiles.");
+
+  function handleAddToCart(creator: RecommendedCreator) {
+    const key = `${creator.platform}:${creator.id}`;
+    if (cartKeys[key]) return;
+
+    const existingRaw = localStorage.getItem(CREATOR_CART_KEY);
+    const existing = existingRaw ? (JSON.parse(existingRaw) as CreatorCartItem[]) : [];
+    if (existing.some(item => item.id === creator.id && item.platform === creator.platform)) {
+      setCartKeys(prev => ({ ...prev, [key]: true }));
+      return;
+    }
+
+    const next: CreatorCartItem[] = [...existing, { ...creator, addedAt: new Date().toISOString() }];
+    localStorage.setItem(CREATOR_CART_KEY, JSON.stringify(next));
+    setCartKeys(prev => ({ ...prev, [key]: true }));
+  }
 
   if (!mounted) return null;
 
@@ -456,7 +508,13 @@ export default function RecommendationsPage() {
             </div>
           ) : (
             filtered.map((creator, i) => (
-              <CreatorCard key={creator.id} creator={creator} rank={i} />
+              <CreatorCard
+                key={`${creator.platform}:${creator.id}`}
+                creator={creator}
+                rank={i}
+                isInCart={Boolean(cartKeys[`${creator.platform}:${creator.id}`])}
+                onAddToCart={handleAddToCart}
+              />
             ))
           )}
         </main>
@@ -697,6 +755,22 @@ const STYLES = `
     position: relative; z-index: 2;
   }
   .profile-link-badge:hover { background: #7c5af030; border-color: var(--accent); }
+  .cart-link-badge {
+    display: inline-flex;
+    align-items: center;
+    background: #34d39918;
+    border: 1px solid #34d39950;
+    border-radius: 99px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #7ce8c1;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+  }
+  .cart-link-badge:hover { background: #34d3992c; border-color: #34d39985; }
+  .cart-link-badge.in-cart { opacity: 0.72; cursor: not-allowed; }
   .score-section { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; }
   .score-ring-wrap { position: relative; }
   .score-svg { display: block; }
@@ -793,6 +867,16 @@ const STYLES = `
     background: none; border: 1px solid var(--border); color: var(--muted);
   }
   .action-btn.secondary:hover { border-color: var(--border2); color: var(--text); }
+  .action-btn.tertiary {
+    background: #34d39918;
+    border: 1px solid #34d39950;
+    color: #7ce8c1;
+  }
+  .action-btn.tertiary:hover { border-color: #34d39985; color: #a8f5da; }
+  .action-btn.tertiary.in-cart {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
 
   /* ── Empty state ── */
   .empty-state {

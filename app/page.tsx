@@ -12,6 +12,7 @@ interface Creator {
   name: string;
   handle: string;
   avatar: string;
+  profileUrl?: string;
   platforms: Platform[];
   niche: string;
   followers: number;
@@ -22,7 +23,23 @@ interface Creator {
   sentimentScore: number;
   pastCollaborations: string[];
   verified: boolean;
+  source?: "mock" | "cart";
 }
+
+interface CartCreator {
+  id: string;
+  name: string;
+  handle: string;
+  platform: "YouTube" | "Instagram";
+  profileUrl?: string;
+  subscribers?: number;
+  engagementRate?: number;
+  niche?: string;
+  country?: string;
+  matchScore?: number;
+}
+
+const CREATOR_CART_KEY = "creator_cart_items";
 
 // ── Mock Data ──────────────────────────────────────────────────────────────
 const MOCK_CREATORS: Creator[] = [
@@ -207,6 +224,11 @@ const AVATAR_PALETTE = [
 const avatarColor = (id: number) => AVATAR_PALETTE[id % AVATAR_PALETTE.length];
 
 function getCreatorProfileUrl(c: Creator): string {
+  if (c.profileUrl) {
+    if (/^https?:\/\//i.test(c.profileUrl)) return c.profileUrl;
+    return `https://${c.profileUrl.replace(/^\/+/, "")}`;
+  }
+
   const slug = c.handle.replace(/^@/, "").trim();
   const primary = c.platforms[0];
 
@@ -219,17 +241,89 @@ function getCreatorProfileUrl(c: Creator): string {
   return `https://www.facebook.com/${slug}`;
 }
 
+function numericIdFromText(text: string): number {
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) + 10_000;
+}
+
+function initialsFromName(name: string): string {
+  const parts = name.split(" ").filter(Boolean);
+  if (parts.length === 0) return "CR";
+  return parts.slice(0, 2).map(p => p[0]?.toUpperCase() ?? "").join("");
+}
+
+function mapCartCreatorToDashboard(item: CartCreator): Creator {
+  const handle = item.handle?.startsWith("@") ? item.handle : `@${item.handle ?? "creator"}`;
+  const platform: Platform = item.platform === "YouTube" ? "YouTube" : "Instagram";
+  const sentiment = Math.max(55, Math.min(99, Math.round(item.matchScore ?? 82)));
+
+  return {
+    id: numericIdFromText(`${item.platform}:${item.id}`),
+    name: item.name || "Creator",
+    handle,
+    avatar: initialsFromName(item.name || "Creator"),
+    profileUrl: item.profileUrl,
+    platforms: [platform],
+    niche: item.niche || "General",
+    followers: Math.max(0, Number(item.subscribers ?? 0)),
+    engagementRate: Math.max(0, Number(item.engagementRate ?? 0)),
+    audienceLocation: item.country || "Unknown",
+    audienceAge: "All",
+    audienceGender: "All",
+    sentimentScore: sentiment,
+    pastCollaborations: [],
+    verified: true,
+    source: "cart",
+  };
+}
+
 // ══════════════════════════════════════════════════════════════════════════
 // MAIN PAGE
 // ══════════════════════════════════════════════════════════════════════════
 export default function CreatorDiscoveryPage() {
   const router = useRouter();
+  const [creatorsData, setCreatorsData] = useState<Creator[]>(MOCK_CREATORS);
+  const [cartCount, setCartCount] = useState(0);
 
   // ── Auth guard ─────────────────────────────────────────────────────────
   const [authChecked, setAuthChecked] = useState(false);
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("auth_token");
-    if (!isLoggedIn) { router.push("/auth"); } else { setAuthChecked(true); }
+    if (!isLoggedIn) {
+      router.push("/auth");
+      return;
+    }
+
+    try {
+      const rawCart = localStorage.getItem(CREATOR_CART_KEY);
+      if (!rawCart) {
+        setCreatorsData(MOCK_CREATORS.map(c => ({ ...c, source: "mock" })));
+        setCartCount(0);
+        setAuthChecked(true);
+        return;
+      }
+
+      const parsed = JSON.parse(rawCart) as CartCreator[];
+      const cartMapped = parsed.map(mapCartCreatorToDashboard);
+      const seenHandles = new Set(cartMapped.map(c => c.handle.toLowerCase()));
+      const merged = [
+        ...cartMapped,
+        ...MOCK_CREATORS
+          .map(c => ({ ...c, source: "mock" as const }))
+          .filter(c => !seenHandles.has(c.handle.toLowerCase())),
+      ];
+
+      setCreatorsData(merged);
+      setCartCount(cartMapped.length);
+    } catch {
+      setCreatorsData(MOCK_CREATORS.map(c => ({ ...c, source: "mock" })));
+      setCartCount(0);
+    }
+
+    setAuthChecked(true);
   }, [router]);
   // ───────────────────────────────────────────────────────────────────────
 
@@ -254,7 +348,7 @@ export default function CreatorDiscoveryPage() {
     );
 
   const filtered = useMemo(() => {
-    return MOCK_CREATORS.filter((c) => {
+    return creatorsData.filter((c) => {
       if (search && !c.name.toLowerCase().includes(search.toLowerCase()) &&
           !c.handle.toLowerCase().includes(search.toLowerCase()) &&
           !c.niche.toLowerCase().includes(search.toLowerCase())) return false;
@@ -266,7 +360,7 @@ export default function CreatorDiscoveryPage() {
       if (selectedLocation !== "All" && c.audienceLocation !== selectedLocation) return false;
       return true;
     });
-  }, [search, selectedPlatforms, selectedNiche, minEngagement, minFollowers, maxFollowers, selectedAge, selectedLocation]);
+  }, [creatorsData, search, selectedPlatforms, selectedNiche, minEngagement, minFollowers, maxFollowers, selectedAge, selectedLocation]);
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
@@ -369,7 +463,10 @@ export default function CreatorDiscoveryPage() {
           <header className="main-header">
             <div>
               <h1 className="page-title">Creator Discovery</h1>
-              <p className="page-sub">{filtered.length} creators found</p>
+              <p className="page-sub">
+                {filtered.length} creators found
+                {cartCount > 0 ? ` · ${cartCount} from your cart` : ""}
+              </p>
             </div>
             <button
               className="ai-rec-btn"
@@ -429,6 +526,7 @@ function CreatorCard({ creator: c, onSelect }: { creator: Creator; onSelect: (c:
           </div>
           <div className="creator-handle">{c.handle}</div>
           <div className="niche-tag">{c.niche}</div>
+          {c.source === "cart" && <div className="source-tag">From Cart</div>}
         </div>
       </div>
       <div className="platform-row">
@@ -688,6 +786,19 @@ const STYLES = `
     display: inline-block; margin-top: 5px; font-size: 11px;
     background: var(--surface2); border: 1px solid var(--border);
     border-radius: 4px; padding: 2px 7px; color: var(--muted);
+  }
+  .source-tag {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #7ce8c1;
+    background: #34d39918;
+    border: 1px solid #34d39950;
+    border-radius: 4px;
+    padding: 2px 7px;
   }
 
   .platform-row { display: flex; gap: 6px; flex-wrap: wrap; }
