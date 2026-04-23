@@ -264,7 +264,7 @@ export async function POST(request: NextRequest) {
       platforms = ['youtube'],
       maxResults = 8,
       allowDemoFallback = false,
-    } = body as { keywords: string[]; platforms: string[]; maxResults: number }
+    } = body as { keywords: string[]; platforms: string[]; maxResults: number; allowDemoFallback?: boolean }
 
     const platformsLower = platforms.map((p: string) => p.toLowerCase())
     const runFetch = async (kw: string[], limit: number) => {
