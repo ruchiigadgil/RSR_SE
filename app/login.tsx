@@ -447,9 +447,9 @@ function CreatorCard({ creator: c, onSelect }: { creator: Creator; onSelect: (c:
       </div>
 
       <div className="audience-row">
-        <span className="aud-tag">📍 {c.audienceLocation}</span>
-        <span className="aud-tag">🎂 {c.audienceAge}</span>
-        <span className="aud-tag">👤 {c.audienceGender}</span>
+        <span className="aud-tag">LOC {c.audienceLocation}</span>
+        <span className="aud-tag">AGE {c.audienceAge}</span>
+        <span className="aud-tag">GEN {c.audienceGender}</span>
       </div>
 
       <a
@@ -510,9 +510,9 @@ function CreatorDrawer({ creator: c, onClose }: { creator: Creator; onClose: () 
 
         <div className="drawer-section-title">Audience Demographics</div>
         <div className="demo-grid">
-          <div className="demo-item"><span className="demo-icon">📍</span><div><p className="demo-key">Location</p><p className="demo-val">{c.audienceLocation}</p></div></div>
-          <div className="demo-item"><span className="demo-icon">🎂</span><div><p className="demo-key">Age Group</p><p className="demo-val">{c.audienceAge}</p></div></div>
-          <div className="demo-item"><span className="demo-icon">👤</span><div><p className="demo-key">Gender</p><p className="demo-val">{c.audienceGender}</p></div></div>
+          <div className="demo-item"><span className="demo-icon">LOC</span><div><p className="demo-key">Location</p><p className="demo-val">{c.audienceLocation}</p></div></div>
+          <div className="demo-item"><span className="demo-icon">AGE</span><div><p className="demo-key">Age Group</p><p className="demo-val">{c.audienceAge}</p></div></div>
+          <div className="demo-item"><span className="demo-icon">GEN</span><div><p className="demo-key">Gender</p><p className="demo-val">{c.audienceGender}</p></div></div>
         </div>
 
         <div className="drawer-section-title">Past Collaborations</div>
@@ -526,7 +526,7 @@ function CreatorDrawer({ creator: c, onClose }: { creator: Creator; onClose: () 
           <p className="no-collab">No past collaborations on record.</p>
         )}
 
-        <button className="contact-btn">💬 Start Collaboration</button>
+        <button className="contact-btn">Start Collaboration</button>
       </aside>
     </div>
   );

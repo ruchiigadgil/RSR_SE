@@ -499,7 +499,7 @@ export default function RecommendationsPage() {
         <main className="rec-grid">
           {filtered.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">🔍</div>
+              <div className="empty-icon">Search</div>
               <h3 className="empty-title">No creators match your filters</h3>
               <p className="empty-sub">Try lowering the minimum score or changing the platform filter.</p>
               <button className="empty-btn" onClick={() => { setFilterPlatform("all"); setFilterMinScore(0); }}>

@@ -260,9 +260,9 @@ export default function OnboardingPage() {
 
             <div className="ob-features">
               {[
-                { icon: "⚡", title: "Real-time scraping", desc: "Live data from YouTube & Instagram" },
-                { icon: "🎯", title: "5-factor scoring", desc: "Niche, reach, engagement & more" },
-                { icon: "💡", title: "AI explanations", desc: "Understand exactly why each creator fits" },
+                { icon: "RT", title: "Real-time scraping", desc: "Live data from YouTube & Instagram" },
+                { icon: "SC", title: "5-factor scoring", desc: "Niche, reach, engagement & more" },
+                { icon: "AI", title: "AI explanations", desc: "Understand exactly why each creator fits" },
               ].map(f => (
                 <div key={f.title} className="ob-feature-card">
                   <span className="ob-feat-icon">{f.icon}</span>
@@ -337,7 +337,7 @@ export default function OnboardingPage() {
                 onClick={handleFindCreators}
                 disabled={!canGoNext || loadingPhase !== "idle"}
               >
-                <span className="find-icon">🔍</span>
+                <span className="find-icon">Go</span>
                 Find My Creators
               </button>
             )}
@@ -392,10 +392,10 @@ function Step1({ form, set }: { form: FormState; set: <K extends keyof FormState
         <Field label="Campaign Type *">
           <div className="radio-grid">
             {[
-              { val: "brand-awareness", icon: "📢", label: "Brand Awareness" },
-              { val: "product-launch", icon: "🚀", label: "Product Launch" },
-              { val: "conversions", icon: "🛒", label: "Drive Conversions" },
-              { val: "content-creation", icon: "🎬", label: "Content Creation" },
+              { val: "brand-awareness", icon: "BA", label: "Brand Awareness" },
+              { val: "product-launch", icon: "PL", label: "Product Launch" },
+              { val: "conversions", icon: "CV", label: "Drive Conversions" },
+              { val: "content-creation", icon: "CC", label: "Content Creation" },
             ].map(o => (
               <label key={o.val} className={`radio-card ${form.campaignType === o.val ? "selected" : ""}`}>
                 <input type="radio" name="campaignType" value={o.val} hidden
@@ -540,10 +540,10 @@ function Step3({
         <Field label="Content Tone">
           <div className="radio-grid">
             {[
-              { val: "educational", icon: "📚", label: "Educational" },
-              { val: "entertaining", icon: "🎭", label: "Entertaining" },
-              { val: "inspirational", icon: "✨", label: "Inspirational" },
-              { val: "authentic", icon: "💬", label: "Raw & Authentic" },
+              { val: "educational", icon: "ED", label: "Educational" },
+              { val: "entertaining", icon: "EN", label: "Entertaining" },
+              { val: "inspirational", icon: "IN", label: "Inspirational" },
+              { val: "authentic", icon: "AU", label: "Raw & Authentic" },
             ].map(o => (
               <label key={o.val} className={`radio-card ${form.contentTone === o.val ? "selected" : ""}`}>
                 <input type="radio" name="tone" value={o.val} hidden

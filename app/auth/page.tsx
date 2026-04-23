@@ -161,7 +161,7 @@ export default function AuthPage() {
               )}
 
               {/* Error */}
-              {error && <p className="error-msg">⚠ {error}</p>}
+              {error && <p className="error-msg">Error: {error}</p>}
 
               {/* Submit */}
               <button
