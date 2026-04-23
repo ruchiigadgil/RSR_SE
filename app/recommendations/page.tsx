@@ -79,6 +79,21 @@ const PLATFORM_COLORS: Record<string, string> = {
   Instagram: "#E1306C",
 };
 
+function getSafeProfileUrl(creator: RecommendedCreator): string {
+  const raw = (creator.profileUrl ?? "").trim();
+  if (raw) {
+    if (/^https?:\/\//i.test(raw)) return raw;
+    return `https://${raw.replace(/^\/+/, "")}`;
+  }
+
+  const slug = creator.handle.replace(/^@/, "").trim();
+  if (!slug) return "#";
+
+  return creator.platform === "YouTube"
+    ? `https://www.youtube.com/@${slug}`
+    : `https://www.instagram.com/${slug}`;
+}
+
 // ─── Score Ring (SVG) ──────────────────────────────────────────────────────────
 
 function ScoreRing({ score, size = 88 }: { score: number; size?: number }) {
@@ -130,6 +145,8 @@ function CreatorCard({ creator, rank }: { creator: RecommendedCreator; rank: num
   const initials = getInitials(creator.name);
   const platColor = PLATFORM_COLORS[creator.platform] ?? "#7c5af0";
   const scoreColor = getScoreColor(creator.matchScore);
+  const profileUrl = getSafeProfileUrl(creator);
+  const hasProfileUrl = profileUrl !== "#";
 
   return (
     <div className={`creator-card ${expanded ? "expanded" : ""}`} style={{ animationDelay: `${rank * 80}ms` }}>
@@ -141,7 +158,8 @@ function CreatorCard({ creator, rank }: { creator: RecommendedCreator; rank: num
       {/* Header */}
       <div className="card-header">
         {/* Avatar — clicking opens profile */}
-        <a href={creator.profileUrl} target="_blank" rel="noopener noreferrer" className="card-avatar-link"
+        <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="card-avatar-link"
+          onClick={(e) => { if (!hasProfileUrl) e.preventDefault(); }}
           style={{ background: `linear-gradient(135deg, ${platColor}30, ${platColor}10)`, border: `2px solid ${platColor}50` }}>
           {creator.avatarUrl && !imgFailed
             ? <img
@@ -156,7 +174,8 @@ function CreatorCard({ creator, rank }: { creator: RecommendedCreator; rank: num
         </a>
 
         <div className="card-identity">
-          <a href={creator.profileUrl} target="_blank" rel="noopener noreferrer" className="card-name-link">
+          <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="card-name-link"
+            onClick={(e) => { if (!hasProfileUrl) e.preventDefault(); }}>
             <h3 className="card-name">{creator.name}</h3>
           </a>
           <p className="card-handle">{creator.handle}</p>
@@ -164,7 +183,8 @@ function CreatorCard({ creator, rank }: { creator: RecommendedCreator; rank: num
             <span className="platform-badge" style={{ background: `${platColor}20`, color: platColor, border: `1px solid ${platColor}40` }}>
               {creator.platform === "YouTube" ? "▶" : "◉"} {creator.platform}
             </span>
-            <a href={creator.profileUrl} target="_blank" rel="noopener noreferrer" className="profile-link-badge">
+            <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="profile-link-badge"
+              onClick={(e) => { if (!hasProfileUrl) e.preventDefault(); }}>
               View Profile ↗
             </a>
           </div>
@@ -252,11 +272,12 @@ function CreatorCard({ creator, rank }: { creator: RecommendedCreator; rank: num
 
           {/* Actions */}
           <div className="card-actions">
-            <a href={creator.profileUrl} target="_blank" rel="noopener noreferrer" className="action-btn primary">
+            <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="action-btn primary"
+              onClick={(e) => { if (!hasProfileUrl) e.preventDefault(); }}>
               View Profile →
             </a>
             <button className="action-btn secondary" onClick={() => {
-              navigator.clipboard.writeText(creator.profileUrl).catch(() => {});
+              navigator.clipboard.writeText(profileUrl).catch(() => {});
             }}>
               Copy Link
             </button>
@@ -610,6 +631,7 @@ const STYLES = `
     content: ''; position: absolute; inset: 0; border-radius: 18px;
     background: linear-gradient(135deg, #7c5af005, transparent);
     opacity: 0; transition: opacity 0.3s;
+    pointer-events: none;
   }
   .creator-card:hover {
     transform: translateY(-4px);
@@ -631,6 +653,7 @@ const STYLES = `
   .card-header {
     display: flex; align-items: flex-start; gap: 14px;
     padding-top: 8px; /* space for rank badge */
+    position: relative; z-index: 1;
   }
   .card-avatar-link {
     width: 60px; height: 60px; border-radius: 50%;
@@ -671,6 +694,7 @@ const STYLES = `
     border-radius: 99px; padding: 3px 10px; font-size: 11px; font-weight: 600;
     color: var(--accent2); text-decoration: none; letter-spacing: 0.03em;
     transition: background 0.2s, border-color 0.2s;
+    position: relative; z-index: 2;
   }
   .profile-link-badge:hover { background: #7c5af030; border-color: var(--accent); }
   .score-section { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; }

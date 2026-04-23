@@ -206,6 +206,19 @@ const AVATAR_PALETTE = [
 ];
 const avatarColor = (id: number) => AVATAR_PALETTE[id % AVATAR_PALETTE.length];
 
+function getCreatorProfileUrl(c: Creator): string {
+  const slug = c.handle.replace(/^@/, "").trim();
+  const primary = c.platforms[0];
+
+  if (!slug) return "#";
+
+  if (primary === "Instagram") return `https://www.instagram.com/${slug}`;
+  if (primary === "YouTube") return `https://www.youtube.com/@${slug}`;
+  if (primary === "Twitter") return `https://x.com/${slug}`;
+  if (primary === "LinkedIn") return `https://www.linkedin.com/in/${slug}`;
+  return `https://www.facebook.com/${slug}`;
+}
+
 // ══════════════════════════════════════════════════════════════════════════
 // MAIN PAGE
 // ══════════════════════════════════════════════════════════════════════════
@@ -439,7 +452,15 @@ function CreatorCard({ creator: c, onSelect }: { creator: Creator; onSelect: (c:
         <span className="aud-tag">👤 {c.audienceGender}</span>
       </div>
 
-      <button className="view-profile-btn">View Profile →</button>
+      <a
+        className="view-profile-btn"
+        href={getCreatorProfileUrl(c)}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+      >
+        View Profile →
+      </a>
     </div>
   );
 }
