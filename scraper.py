@@ -13,8 +13,29 @@ import urllib.request
 import urllib.parse
 import urllib.error
 
-YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
-APIFY_TOKEN = os.environ.get("APIFY_TOKEN", "")
+
+def _load_dotenv(path: str = ".env") -> None:
+    if not os.path.exists(path):
+        return
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                raw = line.strip()
+                if not raw or raw.startswith("#") or "=" not in raw:
+                    continue
+                key, value = raw.split("=", 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except Exception as e:
+        print(f"[dotenv] Failed to load {path}: {e}", file=sys.stderr)
+
+
+_load_dotenv()
+
+YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "").strip().strip('"').strip("'")
+APIFY_TOKEN = os.environ.get("APIFY_TOKEN", "").strip().strip('"').strip("'")
 
 
 def yt_request(endpoint: str, params: dict) -> dict:

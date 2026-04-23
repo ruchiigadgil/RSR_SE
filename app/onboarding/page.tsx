@@ -158,6 +158,24 @@ export default function OnboardingPage() {
       if (!scrapeRes.ok) throw new Error("Scraping failed");
       const scrapeData = await scrapeRes.json();
       const creators = scrapeData.creators ?? [];
+      const source = typeof scrapeData.source === "string" ? scrapeData.source : "unknown";
+      const scrapeWarning = typeof scrapeData.warning === "string" ? scrapeData.warning : "";
+
+      localStorage.setItem(
+        "creator_scrape_source",
+        JSON.stringify({
+          source,
+          warning: scrapeWarning,
+          creatorCount: creators.length,
+          at: new Date().toISOString(),
+        })
+      );
+
+      if (source === "live-empty" || creators.length === 0) {
+        throw new Error(
+          scrapeWarning || "No live creators found for this query. Try broader keywords or fewer filters."
+        );
+      }
 
       // Step 2: Get recommendations
       setLoadingPhase("recommending");

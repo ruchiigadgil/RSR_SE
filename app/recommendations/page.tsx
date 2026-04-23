@@ -41,6 +41,13 @@ interface BusinessProfile {
   campaignType: string;
 }
 
+interface ScrapeSourceMeta {
+  source: string;
+  warning?: string;
+  creatorCount?: number;
+  at?: string;
+}
+
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatNum(n: number): string {
@@ -266,6 +273,7 @@ export default function RecommendationsPage() {
   const router = useRouter();
   const [recommendations, setRecommendations] = useState<RecommendedCreator[]>([]);
   const [profile, setProfile] = useState<BusinessProfile | null>(null);
+  const [scrapeMeta, setScrapeMeta] = useState<ScrapeSourceMeta | null>(null);
   const [filterPlatform, setFilterPlatform] = useState<string>("all");
   const [filterMinScore, setFilterMinScore] = useState(0);
   const [sortBy, setSortBy] = useState<"matchScore" | "subscribers" | "engagementRate">("matchScore");
@@ -277,12 +285,14 @@ export default function RecommendationsPage() {
 
     const raw = localStorage.getItem("creator_recommendations");
     const rawProfile = localStorage.getItem("business_profile");
+    const rawScrapeMeta = localStorage.getItem("creator_scrape_source");
 
     if (!raw) { router.push("/onboarding"); return; }
 
     try {
       setRecommendations(JSON.parse(raw));
       if (rawProfile) setProfile(JSON.parse(rawProfile));
+      if (rawScrapeMeta) setScrapeMeta(JSON.parse(rawScrapeMeta));
     } catch {
       router.push("/onboarding");
     }
@@ -303,6 +313,18 @@ export default function RecommendationsPage() {
     ? Math.round(filtered.reduce((s, c) => s + c.matchScore, 0) / filtered.length)
     : 0;
   const topScore = filtered[0]?.matchScore ?? 0;
+
+  const source = scrapeMeta?.source ?? "unknown";
+  const isLive = source === "live";
+  const sourceLabel = isLive
+    ? "Live Data: YouTube + Instagram APIs"
+    : source === "demo"
+      ? "Demo Data: Fallback Sample Profiles"
+      : source === "live-empty"
+        ? "No Live Data Found"
+        : "Source Unknown";
+  const sourceNote = scrapeMeta?.warning
+    ?? (isLive ? "Results were fetched from live providers." : "These results may not be real live profiles.");
 
   if (!mounted) return null;
 
@@ -333,6 +355,9 @@ export default function RecommendationsPage() {
           </div>
           <div className="hero-content">
             <div className="hero-tag">AI-Powered Results</div>
+            <div className={`source-tag ${isLive ? "live" : "not-live"}`}>
+              {sourceLabel}
+            </div>
             <h1 className="hero-title">
               {profile?.brandName
                 ? <>Top matches for <span className="hero-brand">{profile.brandName}</span></>
@@ -343,6 +368,7 @@ export default function RecommendationsPage() {
                 Based on your {profile.industry} brand in the {profile.nicheKeywords.slice(0, 3).join(", ")} space
               </p>
             )}
+            <p className={`source-sub ${isLive ? "live" : "not-live"}`}>{sourceNote}</p>
             <div className="hero-stats">
               <div className="hero-stat">
                 <span className="hs-val">{recommendations.length}</span>
@@ -483,6 +509,26 @@ const STYLES = `
     color: var(--accent2); letter-spacing: 0.08em; text-transform: uppercase;
     margin-bottom: 20px; animation: fadeUp 0.5s ease both;
   }
+  .source-tag {
+    display: inline-block;
+    border-radius: 99px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin-bottom: 16px;
+    animation: fadeUp 0.5s 0.05s ease both;
+  }
+  .source-tag.live {
+    color: #34d399;
+    border: 1px solid #34d39955;
+    background: #34d39918;
+  }
+  .source-tag.not-live {
+    color: #fbbf24;
+    border: 1px solid #fbbf2455;
+    background: #fbbf2418;
+  }
   .hero-title {
     font-family: 'Syne', sans-serif; font-size: 44px; font-weight: 800;
     letter-spacing: -0.03em; line-height: 1.1; color: var(--text);
@@ -493,6 +539,13 @@ const STYLES = `
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
   .hero-sub { font-size: 16px; color: var(--muted); margin-bottom: 32px; animation: fadeUp 0.5s 0.2s ease both; }
+  .source-sub {
+    font-size: 13px;
+    margin-bottom: 20px;
+    animation: fadeUp 0.5s 0.25s ease both;
+  }
+  .source-sub.live { color: #8ee3c2; }
+  .source-sub.not-live { color: #f6cf75; }
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(16px); }
     to { opacity: 1; transform: none; }

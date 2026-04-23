@@ -16,8 +16,14 @@ export interface ScrapedCreator {
   country: string
 }
 
+function readEnv(name: string): string {
+  const raw = process.env[name]
+  if (!raw) return ''
+  return raw.trim().replace(/^['\"]|['\"]$/g, '')
+}
+
 async function fetchYouTubeCreators(keywords: string[], maxResults: number): Promise<ScrapedCreator[]> {
-  const apiKey = process.env.YOUTUBE_API_KEY
+  const apiKey = readEnv('YOUTUBE_API_KEY')
   if (!apiKey) return []
 
   const query = keywords.join(' ')
@@ -77,7 +83,7 @@ async function fetchYouTubeCreators(keywords: string[], maxResults: number): Pro
 }
 
 async function fetchInstagramCreators(keywords: string[], maxResults: number): Promise<ScrapedCreator[]> {
-  const apifyToken = process.env.APIFY_TOKEN
+  const apifyToken = readEnv('APIFY_TOKEN')
   if (!apifyToken) return []
 
   try {
@@ -257,34 +263,49 @@ export async function POST(request: NextRequest) {
       keywords = ['lifestyle'],
       platforms = ['youtube'],
       maxResults = 8,
+      allowDemoFallback = false,
     } = body as { keywords: string[]; platforms: string[]; maxResults: number }
 
     const platformsLower = platforms.map((p: string) => p.toLowerCase())
-    const fetchJobs: Promise<ScrapedCreator[]>[] = []
+    const runFetch = async (kw: string[], limit: number) => {
+      const jobs: Promise<ScrapedCreator[]>[] = []
+      if (platformsLower.includes('youtube')) {
+        jobs.push(fetchYouTubeCreators(kw, limit))
+      }
+      if (platformsLower.includes('instagram')) {
+        jobs.push(fetchInstagramCreators(kw, Math.min(limit, 5)))
+      }
 
-    if (platformsLower.includes('youtube')) {
-      fetchJobs.push(fetchYouTubeCreators(keywords, maxResults))
-    }
-    if (platformsLower.includes('instagram')) {
-      fetchJobs.push(fetchInstagramCreators(keywords, Math.min(maxResults, 5)))
-    }
-
-    const results = await Promise.allSettled(fetchJobs)
-    const creators: ScrapedCreator[] = []
-    for (const r of results) {
-      if (r.status === 'fulfilled') creators.push(...r.value)
+      const settled = await Promise.allSettled(jobs)
+      const out: ScrapedCreator[] = []
+      for (const r of settled) {
+        if (r.status === 'fulfilled') out.push(...r.value)
+      }
+      return out
     }
 
+    // Live first: initial query, then one broader retry before any fallback.
+    let creators = await runFetch(keywords, maxResults)
     if (creators.length === 0) {
+      const retryKeywords = keywords.slice(0, 1)
+      creators = await runFetch(retryKeywords.length ? retryKeywords : keywords, maxResults + 2)
+    }
+
+    if (creators.length > 0) {
+      return Response.json({ creators, source: 'live' })
+    }
+
+    const demoEnabled = allowDemoFallback || readEnv('ALLOW_DEMO_FALLBACK') === 'true'
+    if (demoEnabled) {
       const mocks = generateMockCreators(keywords)
       const filtered = mocks.filter(m =>
         platformsLower.length === 0 ||
         platformsLower.includes(m.platform.toLowerCase())
       )
-      return Response.json({ creators: filtered, source: 'demo' })
+      return Response.json({ creators: filtered, source: 'demo', warning: 'Live providers returned no creators' })
     }
 
-    return Response.json({ creators, source: 'live' })
+    return Response.json({ creators: [], source: 'live-empty', warning: 'Live providers returned no creators' })
   } catch (err) {
     return Response.json({ error: 'Scraping failed', details: String(err) }, { status: 500 })
   }
