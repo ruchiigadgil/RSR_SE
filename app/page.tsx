@@ -111,7 +111,7 @@ const MOCK_CREATORS: Creator[] = [
     name: "Rajas Rege",
     handle: "@kaidi_number_420",
     avatar: "DA",
-    platforms: ["Hinge", "Bumble", "Tinder"],
+    platforms: ["Instagram", "Facebook", "Twitter"],
     niche: "chori chori chupke chupke",
     followers: 1,
     engagementRate: 0.7,
@@ -213,10 +213,10 @@ export default function CreatorDiscoveryPage() {
   const router = useRouter();
 
   // ── Auth guard ─────────────────────────────────────────────────────────
-  // Replace localStorage check with your real session logic (NextAuth, Supabase, etc.)
+  const [authChecked, setAuthChecked] = useState(false);
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("auth_token");
-    if (!isLoggedIn) router.push("/auth");
+    if (!isLoggedIn) { router.push("/auth"); } else { setAuthChecked(true); }
   }, [router]);
   // ───────────────────────────────────────────────────────────────────────
 
@@ -263,6 +263,8 @@ export default function CreatorDiscoveryPage() {
     setMinEngagement(0); setMinFollowers(0); setMaxFollowers(5_000_000);
     setSelectedAge("All"); setSelectedLocation("All"); setPage(1);
   };
+
+  if (!authChecked) return <div style={{ background: "#0c0c0f", minHeight: "100vh" }} />;
 
   return (
     <>
@@ -356,6 +358,15 @@ export default function CreatorDiscoveryPage() {
               <h1 className="page-title">Creator Discovery</h1>
               <p className="page-sub">{filtered.length} creators found</p>
             </div>
+            <button
+              className="ai-rec-btn"
+              onClick={() => {
+                const hasRec = localStorage.getItem("creator_recommendations");
+                router.push(hasRec ? "/recommendations" : "/onboarding");
+              }}
+            >
+              ✦ AI Recommendations
+            </button>
           </header>
 
           {filtered.length === 0 ? (
@@ -604,6 +615,16 @@ const STYLES = `
     font-weight: 800; letter-spacing: -0.02em; color: var(--text);
   }
   .page-sub { font-size: 14px; color: var(--muted); margin-top: 4px; }
+  .ai-rec-btn {
+    display: flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #7c5af0, #c084fc);
+    border: none; border-radius: 10px; padding: 10px 20px;
+    color: #fff; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; letter-spacing: 0.02em; white-space: nowrap;
+    transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 2px 16px #7c5af040;
+  }
+  .ai-rec-btn:hover { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 4px 24px #7c5af060; }
 
   .card-grid {
     display: grid;

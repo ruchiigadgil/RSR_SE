@@ -30,7 +30,8 @@ export default function AuthPage() {
     // ── Replace this block with your real auth logic (NextAuth, Supabase, etc.) ──
     await new Promise((r) => setTimeout(r, 1200)); // simulate network
     localStorage.setItem("auth_token", "demo-token"); // remove when using real auth
-    router.push("/");
+    const onboardingDone = localStorage.getItem("onboarding_complete");
+    router.push(onboardingDone ? "/" : "/onboarding");
     // ─────────────────────────────────────────────────────────────────────────────
 
     setLoading(false);
