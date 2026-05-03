@@ -39,6 +39,8 @@ interface BusinessProfile {
   nicheKeywords: string[];
   preferredPlatforms: string[];
   campaignType: string;
+  productPrice?: number;
+  budget?: string;
 }
 
 interface ScrapeSourceMeta {
@@ -52,6 +54,37 @@ const CREATOR_CART_KEY = "creator_cart_items";
 
 interface CreatorCartItem extends RecommendedCreator {
   addedAt: string;
+}
+
+// ─── ROI Helpers ───────────────────────────────────────────────────────────────
+
+const BUDGET_TO_AMOUNT: Record<string, number> = {
+  "under-5k": 3000,
+  "5k-20k": 12000,
+  "20k-100k": 60000,
+  "100k+": 150000,
+};
+
+function estimateProjectedRevenue(creator: RecommendedCreator, productPrice: number): number {
+  const reach = creator.viewCount > 0 ? creator.viewCount : creator.subscribers;
+  const engRate = creator.engagementRate > 0 ? creator.engagementRate / 100 : 0.03;
+  const clicks = reach * engRate;
+  const conversionRate = 0.02; // industry standard 2%
+  const sales = clicks * conversionRate;
+  return Math.round(sales * productPrice);
+}
+
+function estimateROI(revenue: number, budget: string): number {
+  const spend = BUDGET_TO_AMOUNT[budget] ?? 12000;
+  if (spend === 0) return 0;
+  return Math.round(((revenue - spend) / spend) * 100);
+}
+
+function fmtCurrency(n: number): string {
+  if (n >= 1_00_00_000) return `₹${(n / 1_00_00_000).toFixed(1)}Cr`;
+  if (n >= 1_00_000) return `₹${(n / 1_00_000).toFixed(1)}L`;
+  if (n >= 1000) return `₹${(n / 1000).toFixed(0)}K`;
+  return `₹${n}`;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -100,6 +133,55 @@ function getSafeProfileUrl(creator: RecommendedCreator): string {
     : `https://www.instagram.com/${slug}`;
 }
 
+// ─── Mini Bar Chart ────────────────────────────────────────────────────────────
+
+function MiniBarChart({ breakdown }: { breakdown: MatchBreakdown }) {
+  const bars = [
+    { label: "Niche", value: breakdown.nicheMatch, max: 30, color: "#a78bfa" },
+    { label: "Reach", value: breakdown.reachScore, max: 20, color: "#38bdf8" },
+    { label: "Engage", value: breakdown.engagementScore, max: 25, color: "#34d399" },
+    { label: "Platform", value: breakdown.platformMatch, max: 10, color: "#fb923c" },
+    { label: "Budget", value: breakdown.budgetFit, max: 15, color: "#f472b6" },
+  ];
+  const maxH = 48;
+  return (
+    <div className="mini-bar-chart">
+      {bars.map(b => {
+        const pct = b.max > 0 ? (b.value / b.max) : 0;
+        const h = Math.max(4, Math.round(pct * maxH));
+        return (
+          <div key={b.label} className="mini-bar-col">
+            <div className="mini-bar-track">
+              <div className="mini-bar-fill" style={{ height: h, background: b.color }} />
+            </div>
+            <span className="mini-bar-label">{b.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Profit Badge ───────────────────────────────────────────────────────────────
+
+function ProfitBadge({ revenue, roi }: { revenue: number; roi: number }) {
+  const isPositive = roi >= 0;
+  const color = isPositive ? "#34d399" : "#f87171";
+  const bg = isPositive ? "#34d39912" : "#f8717112";
+  const border = isPositive ? "#34d39940" : "#f8717140";
+  return (
+    <div className="profit-badge" style={{ background: bg, border: `1px solid ${border}` }}>
+      <div className="pb-main">
+        <span className="pb-money">{fmtCurrency(revenue)}</span>
+        <span className="pb-sub">Projected Revenue</span>
+      </div>
+      <div className="pb-roi" style={{ color, background: isPositive ? "#34d39920" : "#f8717120", border: `1px solid ${border}` }}>
+        {isPositive ? "+" : ""}{roi}% ROI
+      </div>
+    </div>
+  );
+}
+
 // ─── Score Ring (SVG) ──────────────────────────────────────────────────────────
 
 function ScoreRing({ score, size = 88 }: { score: number; size?: number }) {
@@ -145,11 +227,13 @@ function BreakdownBar({ label, value, max }: { label: string; value: number; max
 
 // ─── Creator Card ──────────────────────────────────────────────────────────────
 
-function CreatorCard({ creator, rank, isInCart, onAddToCart }: {
+function CreatorCard({ creator, rank, isInCart, onAddToCart, productPrice, budget }: {
   creator: RecommendedCreator;
   rank: number;
   isInCart: boolean;
   onAddToCart: (creator: RecommendedCreator) => void;
+  productPrice: number;
+  budget: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
@@ -158,6 +242,8 @@ function CreatorCard({ creator, rank, isInCart, onAddToCart }: {
   const scoreColor = getScoreColor(creator.matchScore);
   const profileUrl = getSafeProfileUrl(creator);
   const hasProfileUrl = profileUrl !== "#";
+  const revenue = estimateProjectedRevenue(creator, productPrice);
+  const roi = estimateROI(revenue, budget);
 
   return (
     <div className={`creator-card ${expanded ? "expanded" : ""}`} style={{ animationDelay: `${rank * 80}ms` }}>
@@ -241,6 +327,9 @@ function CreatorCard({ creator, rank, isInCart, onAddToCart }: {
         )}
       </div>
 
+      {/* Profit Badge */}
+      <ProfitBadge revenue={revenue} roi={roi} />
+
       {/* Explanation snippet */}
       <p className="card-explanation">{creator.explanation}</p>
 
@@ -267,9 +356,10 @@ function CreatorCard({ creator, rank, isInCart, onAddToCart }: {
             </div>
           )}
 
-          {/* Match breakdown */}
+          {/* Score breakdown chart */}
           <div className="breakdown-section">
             <h4 className="why-title">Score Breakdown</h4>
+            <MiniBarChart breakdown={creator.matchBreakdown} />
             <div className="breakdown-bars">
               <BreakdownBar label="Niche Match" value={creator.matchBreakdown.nicheMatch} max={30} />
               <BreakdownBar label="Reach" value={creator.matchBreakdown.reachScore} max={20} />
@@ -323,8 +413,9 @@ export default function RecommendationsPage() {
   const [cartKeys, setCartKeys] = useState<Record<string, true>>({});
   const [filterPlatform, setFilterPlatform] = useState<string>("all");
   const [filterMinScore, setFilterMinScore] = useState(0);
-  const [sortBy, setSortBy] = useState<"matchScore" | "subscribers" | "engagementRate">("matchScore");
+  const [sortBy, setSortBy] = useState<"matchScore" | "subscribers" | "engagementRate" | "projectedRevenue">("matchScore");
   const [mounted, setMounted] = useState(false);
+  const [productPrice, setProductPrice] = useState(999);
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
@@ -340,6 +431,9 @@ export default function RecommendationsPage() {
       setRecommendations(JSON.parse(raw));
       if (rawProfile) setProfile(JSON.parse(rawProfile));
       if (rawScrapeMeta) setScrapeMeta(JSON.parse(rawScrapeMeta));
+
+      const priceRaw = localStorage.getItem("product_price");
+      if (priceRaw) setProductPrice(Number(priceRaw) || 999);
 
       const rawCart = localStorage.getItem(CREATOR_CART_KEY);
       if (rawCart) {
@@ -363,7 +457,11 @@ export default function RecommendationsPage() {
     .sort((a, b) => {
       if (sortBy === "matchScore") return b.matchScore - a.matchScore;
       if (sortBy === "subscribers") return b.subscribers - a.subscribers;
-      return b.engagementRate - a.engagementRate;
+      if (sortBy === "engagementRate") return b.engagementRate - a.engagementRate;
+      if (sortBy === "projectedRevenue") {
+        return estimateProjectedRevenue(b, productPrice) - estimateProjectedRevenue(a, productPrice);
+      }
+      return b.matchScore - a.matchScore;
     });
 
   const avgScore = filtered.length > 0
@@ -442,7 +540,7 @@ export default function RecommendationsPage() {
               </p>
             )}
             <p className={`source-sub ${isLive ? "live" : "not-live"}`}>{sourceNote}</p>
-            <div className="hero-stats">
+          <div className="hero-stats">
               <div className="hero-stat">
                 <span className="hs-val">{recommendations.length}</span>
                 <span className="hs-key">Creators Found</span>
@@ -460,6 +558,12 @@ export default function RecommendationsPage() {
                   {[...new Set(recommendations.map(c => c.platform))].length}
                 </span>
                 <span className="hs-key">Platforms</span>
+              </div>
+              <div className="hero-stat" style={{ borderRight: "none" }}>
+                <span className="hs-val" style={{ color: "#34d399" }}>
+                  {fmtCurrency(filtered.reduce((s, c) => s + estimateProjectedRevenue(c, productPrice), 0))}
+                </span>
+                <span className="hs-key">Total Projected Revenue</span>
               </div>
             </div>
           </div>
@@ -490,6 +594,7 @@ export default function RecommendationsPage() {
               <option value="matchScore">Match Score</option>
               <option value="subscribers">Followers</option>
               <option value="engagementRate">Engagement Rate</option>
+              <option value="projectedRevenue">💰 Projected Revenue</option>
             </select>
           </div>
           <span className="filter-count">{filtered.length} results</span>
@@ -514,6 +619,8 @@ export default function RecommendationsPage() {
                 rank={i}
                 isInCart={Boolean(cartKeys[`${creator.platform}:${creator.id}`])}
                 onAddToCart={handleAddToCart}
+                productPrice={productPrice}
+                budget={profile?.budget ?? "5k-20k"}
               />
             ))
           )}
@@ -914,6 +1021,42 @@ const STYLES = `
     background: none; border: 1px solid var(--border); color: var(--muted);
   }
   .footer-btn.secondary:hover { border-color: var(--border2); color: var(--text); }
+
+  /* ── Profit Badge ── */
+  .profit-badge {
+    display: flex; align-items: center; justify-content: space-between;
+    border-radius: 10px; padding: 10px 14px;
+    margin-bottom: 4px;
+  }
+  .pb-main { display: flex; flex-direction: column; gap: 2px; }
+  .pb-money {
+    font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800;
+    color: #34d399;
+  }
+  .pb-sub { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .pb-roi {
+    border-radius: 8px; padding: 6px 12px;
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Mini Bar Chart ── */
+  .mini-bar-chart {
+    display: flex; align-items: flex-end; gap: 6px;
+    height: 64px; padding: 8px;
+    background: var(--surface2); border-radius: 10px; margin-bottom: 8px;
+  }
+  .mini-bar-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+  .mini-bar-track {
+    display: flex; align-items: flex-end; justify-content: center;
+    height: 48px; width: 100%;
+  }
+  .mini-bar-fill {
+    width: 70%; border-radius: 3px 3px 0 0;
+    transition: height 0.6s cubic-bezier(.4,0,.2,1);
+    min-height: 4px;
+  }
+  .mini-bar-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
 
   @media (max-width: 768px) {
     .rec-hero { padding: 40px 20px 32px; }

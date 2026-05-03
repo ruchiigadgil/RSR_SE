@@ -21,6 +21,7 @@ interface FormState {
   preferredPlatforms: string[];
   contentTone: string;
   minFollowers: number;
+  productPrice: number;
 }
 
 type LoadingPhase = "idle" | "scraping" | "recommending" | "done" | "error";
@@ -41,6 +42,26 @@ const INITIAL_FORM: FormState = {
   preferredPlatforms: ["YouTube"],
   contentTone: "authentic",
   minFollowers: 10000,
+  productPrice: 999,
+};
+
+const DEMO_FORM: FormState = {
+  brandName: "Glow Republic",
+  industry: "Beauty & Skincare",
+  product: "Organic face serums and SPF moisturisers for urban women.",
+  website: "https://glowrepublic.in",
+  campaignType: "product-launch",
+  budget: "5k-20k",
+  duration: "1-month",
+  minAge: 18,
+  maxAge: 34,
+  targetGender: "female",
+  targetLocation: "India",
+  nicheKeywords: ["skincare", "beauty", "glow", "organic"],
+  preferredPlatforms: ["Instagram", "YouTube"],
+  contentTone: "authentic",
+  minFollowers: 10000,
+  productPrice: 1499,
 };
 
 const INDUSTRIES = [
@@ -73,6 +94,7 @@ export default function OnboardingPage() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
   const [animDir, setAnimDir] = useState<"forward" | "backward">("forward");
+  const [autofilling, setAutofilling] = useState(false);
   const msgIndex = useRef(0);
   const msgInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -211,6 +233,7 @@ export default function OnboardingPage() {
 
       localStorage.setItem("creator_recommendations", JSON.stringify(recData.recommendations ?? []));
       localStorage.setItem("business_profile", JSON.stringify(form));
+      localStorage.setItem("product_price", String(form.productPrice || 999));
       localStorage.setItem("onboarding_complete", "true");
 
       setLoadingPhase("done");
@@ -228,6 +251,33 @@ export default function OnboardingPage() {
     form.targetLocation,
     form.nicheKeywords.length > 0 && form.preferredPlatforms.length > 0,
   ][step];
+
+  async function handleAutofill() {
+    if (!form.website) return;
+    setAutofilling(true);
+    // Simulate AI scraping the website
+    await new Promise(r => setTimeout(r, 1800));
+    // In a real integration, call /api/autofill with the URL
+    const url = form.website.toLowerCase();
+    const guessedIndustry =
+      url.includes("beauty") || url.includes("glow") || url.includes("skin") ? "Beauty & Skincare" :
+      url.includes("fit") || url.includes("health") ? "Fitness & Wellness" :
+      url.includes("food") || url.includes("cook") ? "Food & Beverage" :
+      url.includes("tech") || url.includes("app") ? "Technology & Gadgets" :
+      "E-commerce";
+    setForm(prev => ({
+      ...prev,
+      industry: guessedIndustry,
+      brandName: prev.brandName || form.website.replace(/https?:\/\/(www\.)?/, "").split(".")[0].replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+      product: prev.product || `Premium ${guessedIndustry.split(" ")[0]} products for quality-conscious customers.`,
+    }));
+    setAutofilling(false);
+  }
+
+  function handleDemoFill() {
+    setForm(DEMO_FORM);
+    setStep(3);
+  }
 
   return (
     <>
@@ -279,13 +329,21 @@ export default function OnboardingPage() {
 
         {/* ── Form panel ── */}
         <main className="ob-form-panel">
+          {/* Demo shortcut */}
+          {step === 0 && (
+            <div className="demo-bar">
+              <span className="demo-bar-label">First time? Try with a demo brand</span>
+              <button className="demo-bar-btn" onClick={handleDemoFill}>⚡ Load Demo Data</button>
+            </div>
+          )}
+
           {/* Progress */}
           <div className="progress-header">
             <div className="progress-track">
               <div className="progress-fill" style={{ width: `${((step + 1) / 4) * 100}%` }} />
             </div>
             <div className="step-dots">
-              {["Brand", "Campaign", "Audience", "Creators"].map((label, i) => (
+              {["Brand Info", "Campaign", "Audience", "Creators"].map((label, i) => (
                 <div key={label} className={`step-dot ${i <= step ? "active" : ""} ${i === step ? "current" : ""}`}>
                   <div className="dot-circle">
                     {i < step ? <span className="dot-check">✓</span> : <span className="dot-num">{i + 1}</span>}
@@ -298,7 +356,7 @@ export default function OnboardingPage() {
 
           {/* Step content */}
           <div className={`step-wrapper anim-${animDir}`} key={step}>
-            {step === 0 && <Step0 form={form} set={set} />}
+            {step === 0 && <Step0 form={form} set={set} onAutofill={handleAutofill} autofilling={autofilling} />}
             {step === 1 && <Step1 form={form} set={set} />}
             {step === 2 && <Step2 form={form} set={set} />}
             {step === 3 && (
@@ -354,10 +412,15 @@ export default function OnboardingPage() {
 
 // ─── Step Components ──────────────────────────────────────────────────────────
 
-function Step0({ form, set }: { form: FormState; set: <K extends keyof FormState>(k: K, v: FormState[K]) => void }) {
+function Step0({ form, set, onAutofill, autofilling }: {
+  form: FormState;
+  set: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
+  onAutofill: () => void;
+  autofilling: boolean;
+}) {
   return (
     <div className="step-card">
-      <h1 className="step-title">Brand Identity</h1>
+      <h1 className="step-title">Brand Info</h1>
       <p className="step-sub">Tell us about your business</p>
       <div className="fields">
         <Field label="Brand Name *">
@@ -375,8 +438,19 @@ function Step0({ form, set }: { form: FormState; set: <K extends keyof FormState
             value={form.product} onChange={e => set("product", e.target.value)} rows={3} />
         </Field>
         <Field label="Website (optional)">
-          <input className="ob-input" placeholder="https://yourbrand.com" value={form.website}
-            onChange={e => set("website", e.target.value)} />
+          <div className="website-row">
+            <input className="ob-input website-input" placeholder="https://yourbrand.com" value={form.website}
+              onChange={e => set("website", e.target.value)} />
+            <button
+              className={`autofill-btn ${autofilling ? "loading" : ""}`}
+              onClick={onAutofill}
+              disabled={!form.website || autofilling}
+              title="AI auto-fills brand details from your website"
+            >
+              {autofilling ? <span className="af-spinner" /> : "✦ Autofill"}
+            </button>
+          </div>
+          {autofilling && <p className="autofill-hint">🔍 Scanning your website with AI...</p>}
         </Field>
       </div>
     </div>
@@ -392,10 +466,10 @@ function Step1({ form, set }: { form: FormState; set: <K extends keyof FormState
         <Field label="Campaign Type *">
           <div className="radio-grid">
             {[
-              { val: "brand-awareness", icon: "BA", label: "Brand Awareness" },
-              { val: "product-launch", icon: "PL", label: "Product Launch" },
-              { val: "conversions", icon: "CV", label: "Drive Conversions" },
-              { val: "content-creation", icon: "CC", label: "Content Creation" },
+              { val: "brand-awareness", icon: "📣", label: "Brand Awareness" },
+              { val: "product-launch", icon: "🚀", label: "Product Launch" },
+              { val: "conversions", icon: "💰", label: "Drive Conversions" },
+              { val: "content-creation", icon: "🎬", label: "Content Creation" },
             ].map(o => (
               <label key={o.val} className={`radio-card ${form.campaignType === o.val ? "selected" : ""}`}>
                 <input type="radio" name="campaignType" value={o.val} hidden
@@ -421,6 +495,20 @@ function Step1({ form, set }: { form: FormState; set: <K extends keyof FormState
               </label>
             ))}
           </div>
+        </Field>
+        <Field label="Average Product Price (₹) *">
+          <div className="price-row">
+            <span className="price-symbol">₹</span>
+            <input
+              className="ob-input price-input"
+              type="number"
+              min={1}
+              placeholder="e.g. 999"
+              value={form.productPrice || ""}
+              onChange={e => set("productPrice", Number(e.target.value))}
+            />
+          </div>
+          <p className="field-hint">Used to calculate projected revenue from each influencer</p>
         </Field>
         <Field label="Campaign Duration">
           <select className="ob-input ob-select" value={form.duration} onChange={e => set("duration", e.target.value)}>
@@ -679,6 +767,47 @@ const STYLES = `
   }
 
   /* ── Progress ── */
+  /* ── Demo bar ── */
+  .demo-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(135deg, #7c5af015, #c084fc10);
+    border: 1px solid #7c5af030;
+    border-radius: 10px; padding: 10px 16px; margin-bottom: 20px;
+  }
+  .demo-bar-label { font-size: 13px; color: var(--muted); }
+  .demo-bar-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 8px; padding: 7px 16px;
+    color: #fff; font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700;
+    cursor: pointer; letter-spacing: 0.03em; transition: opacity 0.2s, transform 0.15s;
+  }
+  .demo-bar-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+  /* ── Website autofill row ── */
+  .website-row { display: flex; gap: 10px; align-items: center; }
+  .website-input { flex: 1; }
+  .autofill-btn {
+    white-space: nowrap; background: #7c5af020; border: 1px solid #7c5af050;
+    border-radius: 10px; padding: 11px 16px; color: var(--accent2);
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+  }
+  .autofill-btn:hover:not(:disabled) { background: #7c5af035; border-color: var(--accent); }
+  .autofill-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .autofill-btn.loading { opacity: 0.7; cursor: wait; }
+  .af-spinner {
+    width: 14px; height: 14px; border: 2px solid #c084fc44; border-top-color: var(--accent2);
+    border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .autofill-hint { font-size: 12px; color: var(--accent2); margin-top: 6px; animation: msgFade 0.4s ease; }
+
+  /* ── Price field ── */
+  .price-row { display: flex; align-items: center; gap: 10px; }
+  .price-symbol { font-size: 18px; color: var(--muted); font-weight: 700; flex-shrink: 0; }
+  .price-input { flex: 1; }
+  .field-hint { font-size: 11px; color: var(--muted); margin-top: 5px; }
+
   .progress-header { margin-bottom: 40px; }
   .progress-track {
     height: 4px; background: var(--surface2); border-radius: 99px;
