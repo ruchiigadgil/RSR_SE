@@ -219,7 +219,7 @@ function OAuthButton({ icon, label }: { icon: string; label: string }) {
 }
 
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -235,7 +235,7 @@ const STYLES = `
     --radius:   14px;
   }
 
-  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
 
   .auth-shell {
     display: grid;
@@ -263,12 +263,12 @@ const STYLES = `
   .brand-logo { display: flex; align-items: center; gap: 10px; }
   .logo-mark { font-size: 28px; color: var(--accent2); line-height: 1; }
   .logo-text {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 22px; font-weight: 800;
     letter-spacing: -0.02em; color: var(--text);
   }
   .brand-headline {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 38px; font-weight: 800;
     line-height: 1.15; letter-spacing: -0.03em;
     color: var(--text); max-width: 380px;
@@ -286,7 +286,7 @@ const STYLES = `
     border-radius: 10px; padding: 12px 16px;
     display: flex; flex-direction: column; gap: 2px; min-width: 90px;
   }
-  .stat-val { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--accent2); }
+  .stat-val { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 800; color: var(--accent2); }
   .stat-key { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
 
   .orb {
@@ -316,7 +316,7 @@ const STYLES = `
   }
   .tab-btn {
     position: relative; z-index: 1; background: none; border: none;
-    padding: 10px 0; font-family: 'Syne', sans-serif;
+    padding: 10px 0; font-family: 'Inter', sans-serif;
     font-size: 14px; font-weight: 700; cursor: pointer;
     color: var(--muted); transition: color 0.2s;
     border-radius: 8px; letter-spacing: 0.02em;
@@ -325,7 +325,7 @@ const STYLES = `
 
   .form-body { display: flex; flex-direction: column; gap: 18px; }
   .form-title {
-    font-family: 'Syne', sans-serif; font-size: 26px;
+    font-family: 'Inter', sans-serif; font-size: 26px;
     font-weight: 800; letter-spacing: -0.02em; color: var(--text);
   }
   .form-sub { font-size: 14px; color: var(--muted); margin-top: -8px; }
@@ -338,7 +338,7 @@ const STYLES = `
   .field-input {
     width: 100%; background: var(--surface); border: 1px solid var(--border);
     border-radius: 10px; padding: 12px 14px; color: var(--text);
-    font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none;
+    font-family: 'Inter', sans-serif; font-size: 14px; outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
   }
   .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #7c5af022; }
@@ -349,7 +349,7 @@ const STYLES = `
   .pass-toggle {
     position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
     background: none; border: none; color: var(--muted);
-    font-size: 12px; font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-family: 'Inter', sans-serif;
     cursor: pointer; transition: color 0.15s;
   }
   .pass-toggle:hover { color: var(--accent2); }
@@ -357,7 +357,7 @@ const STYLES = `
   .forgot-row { display: flex; justify-content: flex-end; margin-top: -6px; }
   .forgot-btn {
     background: none; border: none; font-size: 12px; color: var(--muted);
-    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: color 0.15s;
+    cursor: pointer; font-family: 'Inter', sans-serif; transition: color 0.15s;
   }
   .forgot-btn:hover { color: var(--accent2); }
 
@@ -370,7 +370,7 @@ const STYLES = `
   .submit-btn {
     width: 100%; background: linear-gradient(135deg, var(--accent), #a855f7);
     border: none; border-radius: 10px; padding: 14px; color: #fff;
-    font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+    font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700;
     letter-spacing: 0.02em; cursor: pointer;
     transition: opacity 0.2s, transform 0.15s;
     display: flex; align-items: center; justify-content: center;
@@ -398,7 +398,7 @@ const STYLES = `
     display: flex; align-items: center; justify-content: center; gap: 8px;
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 10px; padding: 11px 14px; color: var(--text);
-    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
     cursor: pointer; transition: border-color 0.15s, background 0.15s;
   }
   .oauth-btn:hover { border-color: var(--accent); background: var(--surface2); }
@@ -407,7 +407,7 @@ const STYLES = `
   .switch-hint { text-align: center; font-size: 13px; color: var(--muted); }
   .switch-btn {
     background: none; border: none; color: var(--accent2);
-    font-size: 13px; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-family: 'Inter', sans-serif;
     cursor: pointer; font-weight: 600; transition: color 0.15s;
   }
   .switch-btn:hover { color: #fff; }

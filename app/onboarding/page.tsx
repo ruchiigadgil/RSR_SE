@@ -706,7 +706,7 @@ function LoadingOverlay({ phase, message, progress }: { phase: LoadingPhase; mes
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
@@ -717,7 +717,7 @@ const STYLES = `
     --green: #34d399; --red: #f87171;
     --radius: 14px;
   }
-  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
 
   /* ── Shell ── */
   .ob-shell { display: grid; grid-template-columns: 420px 1fr; min-height: 100vh; }
@@ -732,9 +732,9 @@ const STYLES = `
   .ob-brand-inner { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 32px; }
   .ob-logo { display: flex; align-items: center; gap: 10px; }
   .ob-logo-mark { font-size: 26px; color: var(--accent2); }
-  .ob-logo-text { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+  .ob-logo-text { font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
   .ob-headline {
-    font-family: 'Syne', sans-serif; font-size: 34px; font-weight: 800;
+    font-family: 'Inter', sans-serif; font-size: 34px; font-weight: 800;
     line-height: 1.2; letter-spacing: -0.03em; color: var(--text);
   }
   .ob-grad {
@@ -751,7 +751,7 @@ const STYLES = `
   }
   .ob-feature-card:hover { border-color: var(--accent); transform: translateX(4px); }
   .ob-feat-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
-  .ob-feat-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--text); }
+  .ob-feat-title { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; color: var(--text); }
   .ob-feat-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
   .orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 1; }
@@ -778,7 +778,7 @@ const STYLES = `
   .demo-bar-btn {
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     border: none; border-radius: 8px; padding: 7px 16px;
-    color: #fff; font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700;
+    color: #fff; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700;
     cursor: pointer; letter-spacing: 0.03em; transition: opacity 0.2s, transform 0.15s;
   }
   .demo-bar-btn:hover { opacity: 0.85; transform: translateY(-1px); }
@@ -789,7 +789,7 @@ const STYLES = `
   .autofill-btn {
     white-space: nowrap; background: #7c5af020; border: 1px solid #7c5af050;
     border-radius: 10px; padding: 11px 16px; color: var(--accent2);
-    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
     cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
   }
   .autofill-btn:hover:not(:disabled) { background: #7c5af035; border-color: var(--accent); }
@@ -859,7 +859,7 @@ const STYLES = `
   /* ── Step card ── */
   .step-card { padding: 0; }
   .step-title {
-    font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800;
+    font-family: 'Inter', sans-serif; font-size: 28px; font-weight: 800;
     letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px;
   }
   .step-sub { font-size: 14px; color: var(--muted); margin-bottom: 32px; }
@@ -874,7 +874,7 @@ const STYLES = `
   .ob-input {
     width: 100%; background: var(--surface); border: 1px solid var(--border);
     border-radius: 10px; padding: 12px 14px; color: var(--text);
-    font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none;
+    font-family: 'Inter', sans-serif; font-size: 14px; outline: none;
     transition: border-color 0.2s, box-shadow 0.2s; resize: none;
     appearance: none;
   }
@@ -938,7 +938,7 @@ const STYLES = `
   .tag-add-btn {
     align-self: flex-start; background: var(--accent); border: none;
     border-radius: 8px; padding: 8px 16px; color: #fff;
-    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
     cursor: pointer; transition: opacity 0.2s, transform 0.15s;
   }
   .tag-add-btn:hover { opacity: 0.85; transform: translateY(-1px); }
@@ -964,14 +964,14 @@ const STYLES = `
   .ob-nav { display: flex; gap: 12px; margin-top: 40px; justify-content: flex-end; }
   .ob-btn-back {
     background: none; border: 1px solid var(--border); border-radius: 10px;
-    padding: 12px 24px; color: var(--muted); font-family: 'DM Sans', sans-serif;
+    padding: 12px 24px; color: var(--muted); font-family: 'Inter', sans-serif;
     font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;
   }
   .ob-btn-back:hover { border-color: var(--border2); color: var(--text); }
   .ob-btn-next {
     background: linear-gradient(135deg, var(--accent), #a855f7);
     border: none; border-radius: 10px; padding: 12px 28px;
-    color: #fff; font-family: 'Syne', sans-serif; font-size: 14px;
+    color: #fff; font-family: 'Inter', sans-serif; font-size: 14px;
     font-weight: 700; cursor: pointer; letter-spacing: 0.02em;
     transition: opacity 0.2s, transform 0.15s;
   }
@@ -982,7 +982,7 @@ const STYLES = `
     background: linear-gradient(135deg, #7c5af0, #c084fc, #a855f7);
     background-size: 200% 200%; animation: gradShift 3s ease infinite;
     border: none; border-radius: 10px; padding: 14px 32px;
-    color: #fff; font-family: 'Syne', sans-serif; font-size: 15px;
+    color: #fff; font-family: 'Inter', sans-serif; font-size: 15px;
     font-weight: 800; cursor: pointer; letter-spacing: 0.02em;
     transition: transform 0.15s, box-shadow 0.2s;
     box-shadow: 0 4px 24px #7c5af040;
@@ -1014,7 +1014,7 @@ const STYLES = `
   }
   .loading-logo { display: flex; align-items: center; gap: 10px; }
   .ll-mark { font-size: 28px; color: var(--accent2); animation: pulseFade 2s ease-in-out infinite; }
-  .ll-text { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; }
+  .ll-text { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 800; }
   @keyframes pulseFade {
     0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
   }
@@ -1055,7 +1055,7 @@ const STYLES = `
     background: linear-gradient(90deg, var(--accent), var(--accent2));
     transition: width 0.8s cubic-bezier(.4,0,.2,1);
   }
-  .loading-pct { font-size: 12px; color: var(--muted); font-family: 'Syne', sans-serif; font-weight: 700; }
+  .loading-pct { font-size: 12px; color: var(--muted); font-family: 'Inter', sans-serif; font-weight: 700; }
 
   .loading-dots { display: flex; gap: 8px; }
   .loading-dots span {

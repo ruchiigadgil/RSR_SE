@@ -65,19 +65,24 @@ const BUDGET_TO_AMOUNT: Record<string, number> = {
   "100k+": 150000,
 };
 
-function estimateProjectedRevenue(creator: RecommendedCreator, productPrice: number): number {
+function estimateMetrics(creator: RecommendedCreator, productPrice: number) {
   const reach = creator.viewCount > 0 ? creator.viewCount : creator.subscribers;
+  // engagement rate is already a percentage, e.g. 5 for 5%
   const engRate = creator.engagementRate > 0 ? creator.engagementRate / 100 : 0.03;
-  const clicks = reach * engRate;
-  const conversionRate = 0.02; // industry standard 2%
-  const sales = clicks * conversionRate;
-  return Math.round(sales * productPrice);
-}
-
-function estimateROI(revenue: number, budget: string): number {
-  const spend = BUDGET_TO_AMOUNT[budget] ?? 12000;
-  if (spend === 0) return 0;
-  return Math.round(((revenue - spend) / spend) * 100);
+  
+  // Assume 5% of engaged users click the link
+  const clicks = reach * engRate * 0.05;
+  // Assume 2% of clicks convert to a sale
+  const sales = clicks * 0.02;
+  const revenue = Math.round(sales * productPrice);
+  
+  // Estimate cost: e.g. ₹0.05 per view for YouTube/Insta
+  const cost = Math.round(reach * 0.05);
+  const profit = revenue - cost;
+  
+  const roi = cost > 0 ? Math.round((profit / cost) * 100) : 0;
+  
+  return { revenue, cost, profit, roi };
 }
 
 function fmtCurrency(n: number): string {
@@ -164,16 +169,27 @@ function MiniBarChart({ breakdown }: { breakdown: MatchBreakdown }) {
 
 // ─── Profit Badge ───────────────────────────────────────────────────────────────
 
-function ProfitBadge({ revenue, roi }: { revenue: number; roi: number }) {
-  const isPositive = roi >= 0;
+function ProfitBadge({ metrics }: { metrics: ReturnType<typeof estimateMetrics> }) {
+  const { revenue, cost, profit, roi } = metrics;
+  const isPositive = profit >= 0;
   const color = isPositive ? "#34d399" : "#f87171";
   const bg = isPositive ? "#34d39912" : "#f8717112";
   const border = isPositive ? "#34d39940" : "#f8717140";
   return (
     <div className="profit-badge" style={{ background: bg, border: `1px solid ${border}` }}>
       <div className="pb-main">
-        <span className="pb-money">{fmtCurrency(revenue)}</span>
-        <span className="pb-sub">Projected Revenue</span>
+        <span className="pb-money" style={{ color }}>{profit >= 0 ? "+" : "-"}{fmtCurrency(Math.abs(profit))}</span>
+        <span className="pb-sub">Est. Profit</span>
+      </div>
+      <div className="pb-details">
+        <div className="pb-row">
+          <span className="pb-label">Revenue:</span>
+          <span className="pb-val">{fmtCurrency(revenue)}</span>
+        </div>
+        <div className="pb-row">
+          <span className="pb-label">Est. Cost:</span>
+          <span className="pb-val">{fmtCurrency(cost)}</span>
+        </div>
       </div>
       <div className="pb-roi" style={{ color, background: isPositive ? "#34d39920" : "#f8717120", border: `1px solid ${border}` }}>
         {isPositive ? "+" : ""}{roi}% ROI
@@ -242,8 +258,7 @@ function CreatorCard({ creator, rank, isInCart, onAddToCart, productPrice, budge
   const scoreColor = getScoreColor(creator.matchScore);
   const profileUrl = getSafeProfileUrl(creator);
   const hasProfileUrl = profileUrl !== "#";
-  const revenue = estimateProjectedRevenue(creator, productPrice);
-  const roi = estimateROI(revenue, budget);
+  const metrics = estimateMetrics(creator, productPrice);
 
   return (
     <div className={`creator-card ${expanded ? "expanded" : ""}`} style={{ animationDelay: `${rank * 80}ms` }}>
@@ -328,7 +343,7 @@ function CreatorCard({ creator, rank, isInCart, onAddToCart, productPrice, budge
       </div>
 
       {/* Profit Badge */}
-      <ProfitBadge revenue={revenue} roi={roi} />
+      <ProfitBadge metrics={metrics} />
 
       {/* Explanation snippet */}
       <p className="card-explanation">{creator.explanation}</p>
@@ -459,7 +474,7 @@ export default function RecommendationsPage() {
       if (sortBy === "subscribers") return b.subscribers - a.subscribers;
       if (sortBy === "engagementRate") return b.engagementRate - a.engagementRate;
       if (sortBy === "projectedRevenue") {
-        return estimateProjectedRevenue(b, productPrice) - estimateProjectedRevenue(a, productPrice);
+        return estimateMetrics(b, productPrice).profit - estimateMetrics(a, productPrice).profit;
       }
       return b.matchScore - a.matchScore;
     });
@@ -561,9 +576,9 @@ export default function RecommendationsPage() {
               </div>
               <div className="hero-stat" style={{ borderRight: "none" }}>
                 <span className="hs-val" style={{ color: "#34d399" }}>
-                  {fmtCurrency(filtered.reduce((s, c) => s + estimateProjectedRevenue(c, productPrice), 0))}
+                  {fmtCurrency(filtered.reduce((s, c) => Math.max(0, s + estimateMetrics(c, productPrice).profit), 0))}
                 </span>
-                <span className="hs-key">Total Projected Revenue</span>
+                <span className="hs-key">Total Est. Profit</span>
               </div>
             </div>
           </div>
@@ -594,7 +609,7 @@ export default function RecommendationsPage() {
               <option value="matchScore">Match Score</option>
               <option value="subscribers">Followers</option>
               <option value="engagementRate">Engagement Rate</option>
-              <option value="projectedRevenue">💰 Projected Revenue</option>
+              <option value="projectedRevenue">💰 Est. Profit</option>
             </select>
           </div>
           <span className="filter-count">{filtered.length} results</span>
@@ -646,7 +661,7 @@ export default function RecommendationsPage() {
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg: #0c0c0f; --surface: #13131a; --surface2: #1c1c27; --surface3: #22223a;
@@ -656,7 +671,7 @@ const STYLES = `
     --green: #34d399; --yellow: #fbbf24; --red: #f87171;
     --radius: 14px;
   }
-  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
 
   /* ── Nav ── */
   .rec-nav {
@@ -667,11 +682,11 @@ const STYLES = `
   }
   .nav-logo { display: flex; align-items: center; gap: 10px; }
   .nav-logo-mark { font-size: 22px; color: var(--accent2); }
-  .nav-logo-text { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; }
+  .nav-logo-text { font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 800; }
   .nav-links { display: flex; gap: 4px; }
   .nav-link {
     background: none; border: none; padding: 8px 16px; border-radius: 8px;
-    font-size: 14px; color: var(--muted); cursor: pointer; font-family: 'DM Sans', sans-serif;
+    font-size: 14px; color: var(--muted); cursor: pointer; font-family: 'Inter', sans-serif;
     transition: all 0.2s;
   }
   .nav-link:hover { color: var(--text); background: var(--surface2); }
@@ -716,7 +731,7 @@ const STYLES = `
     background: #fbbf2418;
   }
   .hero-title {
-    font-family: 'Syne', sans-serif; font-size: 44px; font-weight: 800;
+    font-family: 'Inter', sans-serif; font-size: 44px; font-weight: 800;
     letter-spacing: -0.03em; line-height: 1.1; color: var(--text);
     margin-bottom: 14px; animation: fadeUp 0.5s 0.1s ease both;
   }
@@ -747,7 +762,7 @@ const STYLES = `
     padding: 20px 32px; border-right: 1px solid var(--border);
   }
   .hero-stat:last-child { border-right: none; }
-  .hs-val { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--accent2); }
+  .hs-val { font-family: 'Inter', sans-serif; font-size: 28px; font-weight: 800; color: var(--accent2); }
   .hs-key { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 
   /* ── Filter bar ── */
@@ -770,7 +785,7 @@ const STYLES = `
   .filter-select {
     background: var(--surface2); border: 1px solid var(--border);
     border-radius: 8px; padding: 6px 10px; color: var(--text);
-    font-size: 13px; font-family: 'DM Sans', sans-serif; outline: none; cursor: pointer;
+    font-size: 13px; font-family: 'Inter', sans-serif; outline: none; cursor: pointer;
   }
   .filter-count { margin-left: auto; font-size: 13px; color: var(--muted); white-space: nowrap; }
 
@@ -811,7 +826,7 @@ const STYLES = `
     position: absolute; top: 16px; left: 16px;
     background: var(--surface3); border: 1px solid var(--border2);
     border-radius: 99px; padding: 2px 10px; font-size: 11px; font-weight: 800;
-    color: var(--muted); font-family: 'Syne', sans-serif;
+    color: var(--muted); font-family: 'Inter', sans-serif;
   }
 
   /* Card header */
@@ -837,12 +852,12 @@ const STYLES = `
   .card-avatar-link:hover .avatar-hover-overlay { opacity: 1; }
   .avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
   .avatar-initials {
-    font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: var(--text);
+    font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 800; color: var(--text);
   }
   .card-identity { flex: 1; display: flex; flex-direction: column; gap: 5px; }
   .card-name-link { text-decoration: none; }
   .card-name {
-    font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; color: var(--text);
+    font-family: 'Inter', sans-serif; font-size: 17px; font-weight: 700; color: var(--text);
     transition: color 0.15s;
   }
   .card-name-link:hover .card-name { color: var(--accent2); }
@@ -885,7 +900,7 @@ const STYLES = `
     position: absolute; inset: 0; display: flex; align-items: center;
     justify-content: center; gap: 1px;
   }
-  .score-num { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; }
+  .score-num { font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 800; }
   .score-pct { font-size: 10px; color: var(--muted); margin-top: 2px; }
   .score-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
 
@@ -895,7 +910,7 @@ const STYLES = `
     background: var(--surface2); border-radius: 10px; padding: 12px 0;
   }
   .stat-cell { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .stat-val { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800; color: var(--text); }
+  .stat-val { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800; color: var(--text); }
   .stat-key { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
   .stat-divider { width: 1px; height: 30px; background: var(--border); flex-shrink: 0; }
 
@@ -912,7 +927,7 @@ const STYLES = `
     display: flex; align-items: center; justify-content: space-between;
     width: 100%; background: none; border: 1px solid var(--border);
     border-radius: 8px; padding: 10px 14px; cursor: pointer;
-    font-size: 13px; color: var(--muted); font-family: 'DM Sans', sans-serif;
+    font-size: 13px; color: var(--muted); font-family: 'Inter', sans-serif;
     transition: all 0.2s;
   }
   .expand-btn:hover { border-color: var(--accent); color: var(--accent2); background: #7c5af010; }
@@ -932,7 +947,7 @@ const STYLES = `
   /* Why section */
   .why-section, .breakdown-section { display: flex; flex-direction: column; gap: 10px; }
   .why-title {
-    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted);
   }
   .why-list { display: flex; flex-direction: column; gap: 8px; list-style: none; }
@@ -962,7 +977,7 @@ const STYLES = `
   .card-actions { display: flex; gap: 8px; }
   .action-btn {
     padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;
-    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+    cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s;
     text-decoration: none; display: inline-flex; align-items: center;
   }
   .action-btn.primary {
@@ -991,12 +1006,12 @@ const STYLES = `
     gap: 16px; padding: 80px 40px; text-align: center;
   }
   .empty-icon { font-size: 48px; }
-  .empty-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; }
+  .empty-title { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 700; }
   .empty-sub { font-size: 14px; color: var(--muted); max-width: 360px; }
   .empty-btn {
     background: var(--accent); border: none; border-radius: 10px;
     padding: 10px 24px; color: #fff; font-size: 14px; font-weight: 600;
-    cursor: pointer; transition: opacity 0.2s; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; transition: opacity 0.2s; font-family: 'Inter', sans-serif;
   }
   .empty-btn:hover { opacity: 0.85; }
 
@@ -1010,7 +1025,7 @@ const STYLES = `
   .footer-actions { display: flex; gap: 10px; }
   .footer-btn {
     padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;
-    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+    cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s;
   }
   .footer-btn.primary {
     background: linear-gradient(135deg, var(--accent), #a855f7);
@@ -1025,18 +1040,24 @@ const STYLES = `
   /* ── Profit Badge ── */
   .profit-badge {
     display: flex; align-items: center; justify-content: space-between;
-    border-radius: 10px; padding: 10px 14px;
-    margin-bottom: 4px;
+    border-radius: 10px; padding: 12px 14px;
+    margin-bottom: 8px;
   }
   .pb-main { display: flex; flex-direction: column; gap: 2px; }
   .pb-money {
-    font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800;
-    color: #34d399;
+    font-size: 20px; font-weight: 800;
   }
-  .pb-sub { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .pb-sub { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+  .pb-details {
+    display: flex; flex-direction: column; gap: 2px;
+    margin-left: auto; margin-right: 16px;
+  }
+  .pb-row { display: flex; gap: 6px; font-size: 11px; }
+  .pb-label { color: var(--muted); }
+  .pb-val { color: var(--text); font-weight: 600; }
   .pb-roi {
     border-radius: 8px; padding: 6px 12px;
-    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 800;
+    font-size: 13px; font-weight: 800;
     letter-spacing: 0.04em;
   }
 
