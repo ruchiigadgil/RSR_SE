@@ -1,4 +1,6 @@
 import { NextRequest } from 'next/server'
+
+export const maxDuration = 60
 import type { ScrapedCreator } from '../scrape/route'
 
 export interface BusinessProfile {

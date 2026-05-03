@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server'
 
+export const maxDuration = 60
+
 export interface ScrapedCreator {
   id: string
   name: string
@@ -128,7 +130,7 @@ async function fetchInstagramCreators(keywords: string[], maxResults: number): P
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ usernames }),
-        signal: AbortSignal.timeout(75000),
+        signal: AbortSignal.timeout(55000),
       }
     )
     if (!profileRes.ok) return []
