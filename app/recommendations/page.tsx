@@ -306,7 +306,7 @@ function CreatorCard({ creator, rank, isInCart, onAddToCart, productPrice, budge
               onClick={() => onAddToCart(creator)}
               disabled={isInCart}
             >
-              {isInCart ? "In Cart" : "Add to Cart"}
+              {isInCart ? "Liked" : "Like"}
             </button>
           </div>
         </div>
@@ -404,7 +404,7 @@ function CreatorCard({ creator, rank, isInCart, onAddToCart, productPrice, budge
               onClick={() => onAddToCart(creator)}
               disabled={isInCart}
             >
-              {isInCart ? "In Cart" : "Add to Cart"}
+              {isInCart ? "Liked" : "Like"}
             </button>
           </div>
         </div>
