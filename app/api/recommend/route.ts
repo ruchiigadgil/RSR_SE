@@ -168,8 +168,63 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Missing businessProfile or creators' }, { status: 400 })
     }
 
-    const filtered = creators.filter(c => c.subscribers >= (businessProfile.minFollowers ?? 0))
-    const scored = filtered.map(c => scoreCreator(c, businessProfile))
+    // Removed the hard filter to guarantee 8 creators are always scored
+    const filtered = creators;
+    let scored: RecommendedCreator[] = []
+
+    const grokKey = process.env.GROK_API_KEY
+    if (grokKey) {
+      try {
+        const prompt = `You are an expert Influencer Marketing Strategist. Analyze the following creators against the brand's business profile and score them.
+Business Profile: ${JSON.stringify(businessProfile)}
+Creators: ${JSON.stringify(filtered.map(c => ({ id: c.id, name: c.name, niche: c.niche, desc: c.description, subscribers: c.subscribers, platform: c.platform, engagement: c.engagementRate })))}
+
+For each creator, provide:
+1. matchScore (number 0-100)
+2. matchBreakdown (object with nicheMatch/30, reachScore/20, engagementScore/25, platformMatch/10, budgetFit/15)
+3. whyGoodFit (array of exactly 4 strings explaining why they fit)
+4. explanation (a short paragraph)
+
+Return STRICTLY a JSON array of objects with keys: "id", "matchScore", "matchBreakdown", "whyGoodFit", "explanation". Do not include markdown \`\`\`json blocks.`
+
+        const res = await fetch("https://api.x.ai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${grokKey.trim()}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            messages: [{ role: "system", content: "You are a JSON-only API. You must return only a valid JSON array of objects." }, { role: "user", content: prompt }],
+            model: "grok-beta",
+            temperature: 0.2
+          })
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          let jsonStr = data.choices[0].message.content.trim()
+          if (jsonStr.startsWith("\`\`\`json")) jsonStr = jsonStr.replace(/^\`\`\`json\n/, "").replace(/\n\`\`\`$/, "")
+          if (jsonStr.startsWith("\`\`\`")) jsonStr = jsonStr.replace(/^\`\`\`\n/, "").replace(/\n\`\`\`$/, "")
+          
+          const llmResults = JSON.parse(jsonStr) as Array<{id: string, matchScore: number, matchBreakdown: MatchBreakdown, whyGoodFit: string[], explanation: string}>
+          
+          scored = filtered.map(c => {
+            const llmData = llmResults.find(r => r.id === c.id)
+            if (llmData) return { ...c, ...llmData }
+            return scoreCreator(c, businessProfile)
+          })
+        } else {
+          console.error("Grok API Error:", await res.text())
+          throw new Error("Grok API failed")
+        }
+      } catch (err) {
+        console.error("LLM scoring failed, falling back to heuristic", err)
+        scored = filtered.map(c => scoreCreator(c, businessProfile))
+      }
+    } else {
+      scored = filtered.map(c => scoreCreator(c, businessProfile))
+    }
+
     const sorted = scored.sort((a, b) => b.matchScore - a.matchScore)
 
     return Response.json({ recommendations: sorted })

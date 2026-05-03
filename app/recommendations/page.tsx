@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -138,31 +139,32 @@ function getSafeProfileUrl(creator: RecommendedCreator): string {
     : `https://www.instagram.com/${slug}`;
 }
 
-// ─── Mini Bar Chart ────────────────────────────────────────────────────────────
+// ─── Radar Chart ───────────────────────────────────────────────────────────────
 
-function MiniBarChart({ breakdown }: { breakdown: MatchBreakdown }) {
-  const bars = [
-    { label: "Niche", value: breakdown.nicheMatch, max: 30, color: "#a78bfa" },
-    { label: "Reach", value: breakdown.reachScore, max: 20, color: "#38bdf8" },
-    { label: "Engage", value: breakdown.engagementScore, max: 25, color: "#34d399" },
-    { label: "Platform", value: breakdown.platformMatch, max: 10, color: "#fb923c" },
-    { label: "Budget", value: breakdown.budgetFit, max: 15, color: "#f472b6" },
+function ScoreRadarChart({ breakdown }: { breakdown: MatchBreakdown }) {
+  const normalizedData = [
+    { subject: 'Niche', value: (breakdown.nicheMatch / 30) * 100 },
+    { subject: 'Reach', value: (breakdown.reachScore / 20) * 100 },
+    { subject: 'Engage', value: (breakdown.engagementScore / 25) * 100 },
+    { subject: 'Platform', value: (breakdown.platformMatch / 10) * 100 },
+    { subject: 'Budget', value: (breakdown.budgetFit / 15) * 100 },
   ];
-  const maxH = 48;
+
   return (
-    <div className="mini-bar-chart">
-      {bars.map(b => {
-        const pct = b.max > 0 ? (b.value / b.max) : 0;
-        const h = Math.max(4, Math.round(pct * maxH));
-        return (
-          <div key={b.label} className="mini-bar-col">
-            <div className="mini-bar-track">
-              <div className="mini-bar-fill" style={{ height: h, background: b.color }} />
-            </div>
-            <span className="mini-bar-label">{b.label}</span>
-          </div>
-        );
-      })}
+    <div style={{ width: '100%', height: 260, marginBottom: '16px' }}>
+      <ResponsiveContainer>
+        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={normalizedData}>
+          <PolarGrid stroke="#ffffff20" />
+          <PolarAngleAxis dataKey="subject" tick={{ fill: '#9ca3af', fontSize: 11, fontWeight: 600 }} />
+          <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+          <Radar name="Score" dataKey="value" stroke="#a78bfa" strokeWidth={2} fill="#a78bfa" fillOpacity={0.4} />
+          <RechartsTooltip 
+            contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px' }}
+            itemStyle={{ color: '#a78bfa', fontWeight: 'bold' }}
+            formatter={(value: number) => [`${Math.round(value)}%`, 'Match']}
+          />
+        </RadarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
@@ -374,14 +376,7 @@ function CreatorCard({ creator, rank, isInCart, onAddToCart, productPrice, budge
           {/* Score breakdown chart */}
           <div className="breakdown-section">
             <h4 className="why-title">Score Breakdown</h4>
-            <MiniBarChart breakdown={creator.matchBreakdown} />
-            <div className="breakdown-bars">
-              <BreakdownBar label="Niche Match" value={creator.matchBreakdown.nicheMatch} max={30} />
-              <BreakdownBar label="Reach" value={creator.matchBreakdown.reachScore} max={20} />
-              <BreakdownBar label="Engagement" value={creator.matchBreakdown.engagementScore} max={25} />
-              <BreakdownBar label="Platform Fit" value={creator.matchBreakdown.platformMatch} max={10} />
-              <BreakdownBar label="Budget Fit" value={creator.matchBreakdown.budgetFit} max={15} />
-            </div>
+            <ScoreRadarChart breakdown={creator.matchBreakdown} />
           </div>
 
           {/* Niche tags */}
