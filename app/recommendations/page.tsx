@@ -286,8 +286,8 @@ function CreatorCard({ creator, rank, isInCart, onAddToCart, productPrice, budge
             : <span className="avatar-initials">{initials}</span>}
           <span className="avatar-hover-overlay">↗</span>
         </a>
-
-        <div className="card-identity">
+            
+        <div className="card-identity" >
           <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="card-name-link"
             onClick={(e) => { if (!hasProfileUrl) e.preventDefault(); }}>
             <h3 className="card-name">{creator.name}</h3>
