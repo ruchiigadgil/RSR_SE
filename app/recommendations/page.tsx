@@ -161,7 +161,7 @@ function ScoreRadarChart({ breakdown }: { breakdown: MatchBreakdown }) {
           <RechartsTooltip
             contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px' }}
             itemStyle={{ color: '#a78bfa', fontWeight: 'bold' }}
-            formatter={(value) => [`${Math.round(Number(value))}%`, 'Match']}
+            formatter={(value: unknown) => [`${Math.round(Number(value ?? 0))}%`, 'Match'] as [string, string]}
           />
         </RadarChart>
       </ResponsiveContainer>
@@ -286,8 +286,8 @@ function CreatorCard({ creator, rank, isInCart, onAddToCart, productPrice, budge
             : <span className="avatar-initials">{initials}</span>}
           <span className="avatar-hover-overlay">↗</span>
         </a>
-
-        <div className="card-identity">
+            
+        <div className="card-identity" >
           <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="card-name-link"
             onClick={(e) => { if (!hasProfileUrl) e.preventDefault(); }}>
             <h3 className="card-name">{creator.name}</h3>
