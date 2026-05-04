@@ -70,19 +70,19 @@ function estimateMetrics(creator: RecommendedCreator, productPrice: number) {
   const reach = creator.viewCount > 0 ? creator.viewCount : creator.subscribers;
   // engagement rate is already a percentage, e.g. 5 for 5%
   const engRate = creator.engagementRate > 0 ? creator.engagementRate / 100 : 0.03;
-  
+
   // Assume 5% of engaged users click the link
   const clicks = reach * engRate * 0.05;
   // Assume 2% of clicks convert to a sale
   const sales = clicks * 0.02;
   const revenue = Math.round(sales * productPrice);
-  
+
   // Estimate cost: e.g. ₹0.05 per view for YouTube/Insta
   const cost = Math.round(reach * 0.05);
   const profit = revenue - cost;
-  
+
   const roi = cost > 0 ? Math.round((profit / cost) * 100) : 0;
-  
+
   return { revenue, cost, profit, roi };
 }
 
@@ -158,10 +158,10 @@ function ScoreRadarChart({ breakdown }: { breakdown: MatchBreakdown }) {
           <PolarAngleAxis dataKey="subject" tick={{ fill: '#9ca3af', fontSize: 11, fontWeight: 600 }} />
           <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
           <Radar name="Score" dataKey="value" stroke="#a78bfa" strokeWidth={2} fill="#a78bfa" fillOpacity={0.4} />
-          <RechartsTooltip 
+          <RechartsTooltip
             contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px' }}
             itemStyle={{ color: '#a78bfa', fontWeight: 'bold' }}
-            formatter={(value: any) => [`${Math.round(Number(value))}%`, 'Match']}
+            formatter={(value: number) => [`${Math.round(value)}%`, 'Match']}
           />
         </RadarChart>
       </ResponsiveContainer>
@@ -277,12 +277,12 @@ function CreatorCard({ creator, rank, isInCart, onAddToCart, productPrice, budge
           style={{ background: `linear-gradient(135deg, ${platColor}30, ${platColor}10)`, border: `2px solid ${platColor}50` }}>
           {creator.avatarUrl && !imgFailed
             ? <img
-                src={creator.avatarUrl}
-                alt={creator.name}
-                className="avatar-img"
-                referrerPolicy="no-referrer"
-                onError={() => setImgFailed(true)}
-              />
+              src={creator.avatarUrl}
+              alt={creator.name}
+              className="avatar-img"
+              referrerPolicy="no-referrer"
+              onError={() => setImgFailed(true)}
+            />
             : <span className="avatar-initials">{initials}</span>}
           <span className="avatar-hover-overlay">↗</span>
         </a>
@@ -395,7 +395,7 @@ function CreatorCard({ creator, rank, isInCart, onAddToCart, productPrice, budge
               View Profile →
             </a>
             <button className="action-btn secondary" onClick={() => {
-              navigator.clipboard.writeText(profileUrl).catch(() => {});
+              navigator.clipboard.writeText(profileUrl).catch(() => { });
             }}>
               Copy Link
             </button>
@@ -550,7 +550,7 @@ export default function RecommendationsPage() {
               </p>
             )}
             <p className={`source-sub ${isLive ? "live" : "not-live"}`}>{sourceNote}</p>
-          <div className="hero-stats">
+            <div className="hero-stats">
               <div className="hero-stat">
                 <span className="hs-val">{recommendations.length}</span>
                 <span className="hs-key">Creators Found</span>

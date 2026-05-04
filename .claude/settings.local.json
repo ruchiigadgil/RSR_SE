@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(node -e \"const pkg=require\\('./package.json'\\); console.log\\(JSON.stringify\\(pkg.dependencies,null,2\\)\\)\")",
+      "Bash(echo \"exit: $?\")",
+      "Bash(npm install *)",
+      "Bash(python -m venv venv)",
+      "Bash(venv/Scripts/pip install *)"
     ]
   }
 }
