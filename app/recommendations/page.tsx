@@ -161,7 +161,7 @@ function ScoreRadarChart({ breakdown }: { breakdown: MatchBreakdown }) {
           <RechartsTooltip
             contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px' }}
             itemStyle={{ color: '#a78bfa', fontWeight: 'bold' }}
-            formatter={(value) => [`${Math.round(Number(value))}%`, 'Match']}
+            formatter={(value: unknown) => [`${Math.round(Number(value ?? 0))}%`, 'Match'] as [string, string]}
           />
         </RadarChart>
       </ResponsiveContainer>
