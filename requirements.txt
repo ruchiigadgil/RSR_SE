@@ -1,0 +1,12 @@
+# CreatorOS — Python dependencies
+# Python 3.12+ required
+#
+# scraper.py uses only the Python standard library:
+#   sys, os, json, argparse, urllib.request, urllib.parse, urllib.error
+# No third-party packages are required to run scraper.py.
+#
+# The packages below are for local development and testing only.
+
+python-dotenv==1.0.1     # load .env variables without shell export
+requests==2.32.3         # cleaner HTTP client (optional alternative to urllib)
+pytest==8.3.5            # run automated tests
